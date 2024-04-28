@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: payment-system-kotlin
+
+  r2dbc:
+    url: r2dbc:mysql://localhost:3307/test
+    username: root
+    password: 1234
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  thymeleaf:
+    chache: false
