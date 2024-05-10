@@ -9,6 +9,7 @@ plugins {
 
 group = "com.example"
 version = "0.0.1-SNAPSHOT"
+extra["springCloudVersion"] = "2023.0.0"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_17
@@ -17,8 +18,9 @@ java {
 repositories {
     mavenCentral()
 }
-
 dependencies {
+    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
+    implementation("org.springframework.cloud:spring-cloud-starter-vault-config")
     implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
@@ -31,6 +33,13 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("io.projectreactor:reactor-test")
 }
+dependencyManagement {
+    imports {
+        mavenBom("org.springframework.cloud:spring-cloud-dependencies:${property("springCloudVersion")}")
+    }
+}
+
+
 
 tasks.withType<KotlinCompile> {
     kotlinOptions {

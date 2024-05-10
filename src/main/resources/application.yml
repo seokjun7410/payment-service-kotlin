@@ -9,6 +9,12 @@ spring:
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-
   thymeleaf:
-    chache: false
+    cache: false
+
+PSP:
+  toss:
+    secretKey: test_sk_ALnQvDd2VJPLJLkZm4bx8Mj7X41m
+    url: "https://api.tosspayments.com"
+
+
