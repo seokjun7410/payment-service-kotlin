@@ -8,7 +8,7 @@ data class PaymentEvent(
         val orderName: String,
         val orderId: String,
         val paymentKey: String? = null,
-        val paymentType: paymentType? = null,
+        val paymentType: PaymentType? = null,
         val paymentMethod: PaymentMethod? = null,
         val approvedAt: LocalDateTime? = null,
         val paymentOrders: List<PaymentOrder> = emptyList(),
@@ -19,5 +19,6 @@ data class PaymentEvent(
     }
 
     fun isPaymentDone(): Boolean = isPaymentDone
+
 
 }

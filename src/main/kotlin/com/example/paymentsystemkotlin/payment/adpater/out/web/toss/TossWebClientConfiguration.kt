@@ -19,7 +19,7 @@ class TossWebClientConfiguration(
     @Bean
     fun tossPaymentWebClient(): WebClient {
         println(secretKey)
-        val encodedSecretKey = Base64.getEncoder().encodeToString((secretKey).toByteArray());
+        val encodedSecretKey = Base64.getEncoder().encodeToString((secretKey+":").toByteArray());
 
         return WebClient.builder()
                 .baseUrl(baseUrl)
