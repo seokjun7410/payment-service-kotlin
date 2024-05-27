@@ -6,7 +6,7 @@ enum class PaymentMethod(val description: String ) {
 
     companion object {
         fun get(type: String): PaymentMethod {
-            return PaymentMethod.entries.find { it.description == type } ?: error("PaymentMethod (type: $type) 은 올바르지 않은 결제 수단입니다.")
+            return PaymentMethod.entries.find { it.name == type } ?: error("PaymentMethod (type: $type) 은 올바르지 않은 결제 수단입니다.")
         }
     }
 }
