@@ -1,5 +1,6 @@
 package com.example.paymentsystemkotlin.payment.application.port.out
 
+import com.example.paymentsystemkotlin.payment.application.domain.PaymentExecutionResult
 import com.example.paymentsystemkotlin.payment.application.domain.PaymentExtraDetails
 import com.example.paymentsystemkotlin.payment.application.domain.PaymentFailure
 import com.example.paymentsystemkotlin.payment.application.domain.PaymentStatus
@@ -11,6 +12,14 @@ data class PaymentStatusUpdateCommand(
         val extraDetails: PaymentExtraDetails? = null,
         val failure: PaymentFailure? = null
 ){
+
+    constructor(paymentExecutionResult: PaymentExecutionResult): this(
+            paymentKey = paymentExecutionResult.paymentKey,
+            orderId = paymentExecutionResult.orderId,
+            status = paymentExecutionResult.paymentStatus(),
+            extraDetails = paymentExecutionResult.extraDetails,
+            failure = paymentExecutionResult.failure
+    )
     init{
         require(status == PaymentStatus.SUCCESS || status == PaymentStatus.FAILURE || status == PaymentStatus.UNKNOWN){
             "결제 상태 (status: $status)는 올바르지 않은 결제 상태입니다."
