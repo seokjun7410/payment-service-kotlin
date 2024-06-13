@@ -12,6 +12,30 @@ spring:
   thymeleaf:
     cache: false
 
+  cloud:
+    stream:
+      kafka:
+        binder:
+          brokers: pkc-gq2xn.asia-northeast3.gcp.confluent.cloud:9092
+          configuration:
+            security:
+              protocol: SASL_SSL #클라이언트와 카프라 통신 프로토콜
+            sasl:
+              jaas:
+                config: org.apache.kafka.common.security.plain.PlainLoginModule required username='${KAFKA_API_KEY}' password='${KAFKA_SECRET_KEY}';
+              mechanism: PLAIN
+            client:
+              dns:
+                lookup: use_all_dns_ips #주어진 호스트이름에 대해 모든 IP주소를 조회하고 사용
+
+          required-acks: all #모든 레플리카가 성공적으로 복제했다는 확인을 받은 후에만 메시지 전송 - 가장 데이터 손실이 없음 / 전송속도가 느리지만 신뢰성 증가
+          auto-create-topics: false #존재하지 않는 토픽에대한 메시지를 받을때 토픽생성하지 않음
+
+      bindings:
+        consume-in-0:
+          destination: payment
+          group: payment-service
+
 logging:
   level:
     org:
@@ -24,5 +48,9 @@ PSP:
   toss:
     secretKey: "test_gsk_docs_OaPz8L5KdmQXkzRz3y47BMw6"
     url: "https://api.tosspayments.com"
-
+management:
+  endpoints:
+    web:
+      exposure:
+        include: bindings
 
