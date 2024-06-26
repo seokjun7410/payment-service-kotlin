@@ -14,6 +14,7 @@ import reactor.core.publisher.Mono
 class R2DBCPaymentStatusUpdateRepository(
         private val databaseClient: DatabaseClient,
         private val transactionalOperator: TransactionalOperator,
+        private val paymentOutboxRepository: PaymentOutboxRepository
 ) : PaymentStatusUpdateRepository {
 
     override fun updatePaymentStatusToExecuting(orderId: String, paymentKey: String): Mono<Boolean> {
@@ -99,6 +100,7 @@ class R2DBCPaymentStatusUpdateRepository(
                 .flatMap { insertPaymentHistory(it, command.status, "PAYMENT_CONFIRMATION_DONE") }
                 .flatMap { updatePaymentOrderStatus(command.orderId, command.status) }
                 .flatMap { updatePaymentEventExtraDetails(command) }
+                .flatMap { paymentOutboxRepository.insertOutbox(command) }
                 .`as`(transactionalOperator::transactional)
                 .thenReturn(true)
     }
