@@ -31,8 +31,13 @@ spring:
           required-acks: all #모든 레플리카가 성공적으로 복제했다는 확인을 받은 후에만 메시지 전송 - 가장 데이터 손실이 없음 / 전송속도가 느리지만 신뢰성 증가
           auto-create-topics: false #존재하지 않는 토픽에대한 메시지를 받을때 토픽생성하지 않음
 
+        bindings:
+          send-out-0:
+            producer:
+              record-metadata-channel: payment-result
+
       bindings:
-        consume-in-0:
+        send-out-0:
           destination: payment
           group: payment-service
 

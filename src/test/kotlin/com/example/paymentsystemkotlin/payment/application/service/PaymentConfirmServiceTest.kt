@@ -304,4 +304,58 @@ class PaymentConfirmServiceTest (
         assertThat(paymentConfirmationResult.status).isEqualTo(PaymentStatus.FAILURE)
         assertTrue(paymentEvent.isFailure())
     }
+
+    @Test
+    @Tag("ExternalIntegration")
+    fun `should send the event message to the external message system after the payment confirmation has been successful`() {
+        Hooks.onOperatorDebug()
+
+        val orderId = UUID.randomUUID().toString()
+
+        val checkoutCommand = CheckoutCommand(
+            cartId = 1,
+            buyerId = 1,
+            productIds = listOf(1, 2, 3),
+            idempotencyKey = orderId
+        )
+
+        val checkoutResult = checkoutUsecase.checkout(checkoutCommand).block()!!
+
+        val paymentConfirmCommand = PaymentConfirmCommand(
+            paymentKey = UUID.randomUUID().toString(),
+            orderId = orderId,
+            amount = checkoutResult.amount
+        )
+
+        val paymentConfirmService = PaymentConfirmService(
+            paymentStatusUpdatePort = paymentStatusUpdatePort,
+            paymentValidationPort = paymentValidationPort,
+            paymentExecutorPort = mockPaymentExecutorPort,
+            paymentErrorHandler = paymentErrorHandler
+        )
+
+        val paymentExecutionResult = PaymentExecutionResult(
+            paymentKey = paymentConfirmCommand.paymentKey,
+            orderId = paymentConfirmCommand.orderId,
+            extraDetails = PaymentExtraDetails(
+                type = PaymentType.NORMAL,
+                method = PaymentMethod.EASY_PAY,
+                totalAmount = paymentConfirmCommand.amount,
+                orderName = "test_order_name",
+                pspConfirmationStatus = PSPConfirmationStatus.DONE,
+                approvedAt = LocalDateTime.now(),
+                pspRawData = "{}"
+            ),
+            isSuccess = true,
+            isRetryable = false,
+            isUnknown = false,
+            isFailure = false
+        )
+
+        every { mockPaymentExecutorPort.execute(paymentConfirmCommand) } returns Mono.just(paymentExecutionResult)
+
+        paymentConfirmService.confirm(paymentConfirmCommand).block()!!
+
+        Thread.sleep(10000)
+    }
 }
