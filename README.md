@@ -252,16 +252,10 @@ sequenceDiagram
 
 ## 사용 기술
 
-- **프로그래밍 언어:** Java (또는 Kotlin)
+- **프로그래밍 언어:**  Kotlin
 - **프레임워크:** Spring Boot (Webflux 기반 비동기, 논블로킹 I/O)
 - **데이터베이스:** RDBMS (트랜잭션 및 데이터 일관성 보장)
 - **메시징:** Kafka
 - **멱등성 처리:** HTTP 요청 헤더의 `idempotency-key` 사용
 
----
 
-### 개발환경
-
-- **Java:** JDK 11 이상
-- **빌드 도구:** Gradle
-- **컨테이너 (선택 사항):** Docker (로컬 개발 및 테스트 용)
