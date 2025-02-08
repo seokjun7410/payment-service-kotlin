@@ -2,7 +2,7 @@
 # 견고한 결제 서비스
 #### 목차
 
-1. [요구사항 개요](#1.-요구사항-개요)
+1. [요구사항 개요](#1-요구사항-개요)
 2. [결제 시스템 아키텍처: 기술 및 선택 근거](#2결제-시스템-아키텍처-기술-및-선택-근거)
    - [2.1 Payment Service](#21-payment-service)
    - [2.2 Payment Event 와 Payment Order](#22-payment-event-와-payment-order)
@@ -11,18 +11,20 @@
    - [2.3 데이터 저장소](#23-데이터-저장소)
    - [2.4 아키텍처 스타일: MSA](#24-아키텍처-스타일-msa-microservices-architecture)
    - [2.5 동기식 vs 비동기식 통신 & Webflux 활용](#25-동기식-vs-비동기식-통신--webflux-활용)
+     - [동기식 통신](#동기식-통신)
+     - [비동기식 통신](#비동기식-통신)
+     - [Webflux (논블로킹)](#webflux-논블로킹)
    - [2.6 멱등성 (Idempotency) 처리](#26-멱등성-idempotency-처리)
    - [2.7 데이터 일관성과 트랜잭션 처리](#27-데이터-일관성과-트랜잭션-처리)
    - [2.8 메시지 전송 보장 및 이벤트 처리](#28-메시지-전송-보장-및-이벤트-처리)
-3. [시퀀스 다이어그램 및 ERD](#3-시퀀스-다이어그램-및-erd)
-   - [3.1 Checkout 시퀀스 다이어그램](#31checkout-시퀀스-다이어그램)
-   - [3.2 엔티티 관계도 (ERD)](#32-엔티티-관계도-erd)
-4. [결제 워크플로우](#4-결제-워크플로우)
-   - [4.1 Checkout 프로세스](#41-checkout-프로세스)
-   - [4.2 결제 승인 프로세스](#42-결제-승인-프로세스)
-   - [4.3 결제 복구 프로세스](#43-결제-복구-프로세스)
-5. [사용 기술](#사용-기술)
-6. [개발환경](#개발환경)
+3. [결제 워크플로우](#3-결제-워크플로우)
+   - [3.1 Checkout 프로세스](#31-checkout-프로세스)
+   - [3.2 Checkout 시퀀스 다이어그램](#32-checkout-시퀀스-다이어그램)
+   - [3.3 결제 승인 프로세스](#33-결제-승인-프로세스)
+   - [3.4 결제 복구 프로세스](#34-결제-복구-프로세스)
+4. [사용 기술](#4-사용-기술)
+5. [개발환경](#5-개발환경)
+
 
 
 ## 1. 요구사항 개요
@@ -39,6 +41,8 @@
 
 ---
 <img width="638" alt="스크린샷 2025-02-08 오후 3 26 03" src="https://github.com/user-attachments/assets/6a0cb121-d2e8-4512-a01f-ad1002587180" />
+
+
 
 # 2.결제 시스템 아키텍처: 기술 및 선택 근거
 
@@ -86,6 +90,31 @@
 
 > **참고:** 이 프로젝트는 결제 이벤트 생성, 결제 승인, 오류 처리 및 복구 등 결제 전 과정을 관리합니다.  
 > Wallet 및 Ledger 서비스 관련 내용은 포함하지 않습니다.
+
+Payment Service의 핵심 데이터 모델은 **Payment Event**와 **Payment Order**로 구성됩니다.
+
+```mermaid
+erDiagram
+    PAYMENT_EVENT {
+        BIGINT id PK "Payment Event의 기본 키"
+        STRING order_id UK "PSP에서 유일하게 식별되는 주문 ID"
+        STRING payment_key "결제 승인 후 Toss Payments에서 생성된 식별자"
+        BOOLEAN is_payment_done "결제 완료 여부"
+    }
+
+    PAYMENT_ORDER {
+        BIGINT id PK "Payment Order의 기본 키"
+        BIGINT payment_event_id FK "Payment Event와 연관"
+        ENUM payment_order_status "상태: NOT_STARTED, EXECUTING, FAILURE, SUCCESS, UNKNOWN"
+        BIGDECIMAL amount "결제 금액"
+        BOOLEAN ledger_updated "Ledger 업데이트 여부 "
+        BOOLEAN wallet_updated "Wallet 업데이트 여부 "
+        BIGINT buyer_id "구매자 식별자"
+        BIGINT seller_id "판매자 식별자"
+    }
+
+    PAYMENT_EVENT ||--o{ PAYMENT_ORDER: "생성"
+```
 ---
 
 ## 2.3 데이터 저장소
@@ -160,8 +189,21 @@
 
 
 ---
-# 3. 시퀀스 다이어그램 및 ERD
-## 3.1Checkout 시퀀스 다이어그램
+
+## 3. 결제 워크플로우
+
+### 3.1 Checkout 프로세스
+
+- **사용자 요청:**  
+  사용자가 Checkout API를 호출하면 고유 `orderId`를 생성하고, 이에 따라 결제 이벤트와 주문이 생성됩니다.
+
+- **데이터 저장:**  
+  생성된 결제 이벤트 및 주문 정보는 RDBMS에 저장되어 데이터 일관성을 보장합니다.
+
+- **클라이언트 응답:**  
+  Checkout 결과(예: `orderId`, 결제 금액 등)를 클라이언트에 반환하여 결제 위젯을 초기화합니다.
+
+### 3.2 Checkout 시퀀스 다이어그램
 
 ```mermaid
 sequenceDiagram
@@ -181,53 +223,7 @@ sequenceDiagram
     사용자->>결제위젯: 결제 위젯 초기화 (orderId, 금액 등)
 ```
 
----
-
-## 3.2 엔티티 관계도 (ERD)
-
-Payment Service의 핵심 데이터 모델은 **Payment Event**와 **Payment Order**로 구성됩니다.
-
-```mermaid
-erDiagram
-    PAYMENT_EVENT {
-        BIGINT id PK "Payment Event의 기본 키"
-        STRING order_id UK "PSP에서 유일하게 식별되는 주문 ID"
-        STRING payment_key "결제 승인 후 Toss Payments에서 생성된 식별자"
-        BOOLEAN is_payment_done "결제 완료 여부"
-    }
-
-    PAYMENT_ORDER {
-        BIGINT id PK "Payment Order의 기본 키"
-        BIGINT payment_event_id FK "Payment Event와 연관"
-        ENUM payment_order_status "상태: NOT_STARTED, EXECUTING, FAILURE, SUCCESS, UNKNOWN"
-        BIGDECIMAL amount "결제 금액"
-        BOOLEAN ledger_updated "Ledger 업데이트 여부 "
-        BOOLEAN wallet_updated "Wallet 업데이트 여부 "
-        BIGINT buyer_id "구매자 식별자"
-        BIGINT seller_id "판매자 식별자"
-    }
-
-    PAYMENT_EVENT ||--o{ PAYMENT_ORDER: "생성"
-```
-
-> **참고:** Payment Order에 포함된 `ledger_updated`와 `wallet_updated` 필드는 외부 연계용으로, 실제 Wallet 및 Ledger 서비스는 구현되어 있지 않습니다.
-
----
-
-## 4. 결제 워크플로우
-
-### 4.1 Checkout 프로세스
-
-- **사용자 요청:**  
-  사용자가 Checkout API를 호출하면 고유 `orderId`를 생성하고, 이에 따라 결제 이벤트와 주문이 생성됩니다.
-
-- **데이터 저장:**  
-  생성된 결제 이벤트 및 주문 정보는 RDBMS에 저장되어 데이터 일관성을 보장합니다.
-
-- **클라이언트 응답:**  
-  Checkout 결과(예: `orderId`, 결제 금액 등)를 클라이언트에 반환하여 결제 위젯을 초기화합니다.
-
-### 4.2. 결제 승인 프로세스
+### 3.3 결제 승인 프로세스
 
 - **사용자 입력:**  
   사용자가 결제 정보를 입력한 후 결제 승인 요청을 보냅니다.
@@ -241,7 +237,7 @@ erDiagram
 - **오류 처리:**  
   일시적 오류 발생 시 지수 백오프와 지터를 적용한 재시도 메커니즘을 사용합니다.
 
-### 4.3. 결제 복구 프로세스
+### 3.4 결제 복구 프로세스
 
 - **주기적 실행:**  
   일정 주기로 `EXECUTING` 또는 `UNKNOWN` 상태의 미완료 결제 이벤트를 조회합니다.
