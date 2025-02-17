@@ -40,7 +40,7 @@
 
 
 ---
-<img width="638" alt="스크린샷 2025-02-08 오후 3 26 03" src="https://github.com/user-attachments/assets/6a0cb121-d2e8-4512-a01f-ad1002587180" />
+<img width="719" alt="스크린샷 2025-02-17 오후 10 01 20" src="https://github.com/user-attachments/assets/2bcafe12-d367-4cfa-9ec0-d5ab821743c6" />
 
 
 
